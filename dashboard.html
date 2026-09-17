@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bluedotpay - कस्टमर डैशबोर्ड</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { background: #0f172a; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .dashboard-container { background: #1e293b; padding: 30px; border-radius: 12px; width: 100%; max-width: 500px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid #334155; }
+        h2 { text-align: center; margin-bottom: 5px; color: #38bdf8; }
+        .brand-name { text-align: center; font-weight: bold; color: #38bdf8; font-size: 22px; margin-bottom: 5px; }
+        .welcome-text { text-align: center; color: #94a3b8; font-size: 14px; margin-bottom: 25px; }
+        .rate-box { background: #0f172a; border: 1px dashed #38bdf8; padding: 12px; text-align: center; border-radius: 8px; margin-bottom: 20px; font-weight: bold; color: #38bdf8; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #94a3b8; font-size: 14px; font-weight: 500; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #475569; background: #0f172a; color: #fff; border-radius: 6px; font-size: 16px; }
+        input:focus, select:focus { border-color: #38bdf8; outline: none; }
+        .calc-result { background: #0f172a; padding: 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #334155; font-size: 18px; font-weight: bold; color: #4ade80; }
+        .payment-details { background: #1a2333; padding: 15px; border-radius: 8px; border: 1px solid #334155; margin-top: 10px; display: none; }
+        .btn { width: 100%; padding: 14px; background: #38bdf8; border: none; color: #0f172a; font-weight: bold; border-radius: 6px; font-size: 16px; cursor: pointer; transition: 0.3s; margin-top: 15px; }
+        .btn:hover { background: #0ea5e9; }
+        .required { color: #f87171; }
+        
+        /* एडमिन का USDT डिपॉजिट काउंटर बॉक्स */
+        .admin-crypto-box { background: #0f172a; border: 2px solid #eab308; padding: 15px; border-radius: 10px; margin-top: 20px; display: none; }
+        .crypto-network { background: #1e293b; padding: 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #475569; text-align: center; }
+        .crypto-title { color: #eab308; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+        .wallet-address { background: #0f172a; padding: 8px; border-radius: 4px; font-family: monospace; word-break: break-all; font-size: 13px; color: #cbd5e1; border: 1px solid #334155; margin-top: 5px; text-align: left; }
+        .qr-placeholder { width: 140px; height: 140px; background: #334155; margin: 8px auto; display: flex; justify-content: center; align-items: center; border-radius: 6px; color: #94a3b8; font-size: 12px; font-weight: bold; border: 1px solid #475569; }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <div class="brand-name">bluedotpay</div>
+        <h2>USDT बेचें (Sell USDT)</h2>
+        <div class="welcome-text">लॉगिन मोबाइल नंबर: <span id="userMobile">9876XXXXXX</span></div>
+        
+        <!-- लाइव रेट बॉक्स -->
+        <div class="rate-box">
+            आज का लाइव रेट: 1 USDT = ₹<span id="liveRate">92.50</span> INR
+        </div>
+
+        <form id="sellForm" onsubmit="handleSubmit(event)">
+            
+            <!-- 💵 USDT कनवर्टर इनपुट -->
+            <div class="form-group">
+                <label for="usdtAmount">आपको कितने USDT बेचने हैं? <span class="required">*</span></label>
+                <input type="number" id="usdtAmount" step="any" placeholder="USDT की मात्रा डालें (जैसे: 100)" required oninput="calculateINR()">
+                
+                <!-- ऑटोमैटिक कनवर्टर रिजल्ट -->
+                <div class="calc-result">
+                    आपको मिलेंगे: ₹<span id="inrAmount">0.00</span> INR
+                </div>
+            </div>
+
+            <!-- 💳 पेमेंट मेथड सिलेक्शन -->
+            <div class="form-group">
+                <label for="paymentMethod">आपको पेमेंट किस माध्यम में चाहिए? <span class="required">*</span></label>
+                <select id="paymentMethod" required onchange="handlePaymentMethodChange()">
+                    <option value="">-- भुगतान का तरीका चुनें --</option>
+                    <option value="IMPS">IMPS (बैंक ट्रांसफर)</option>
+                    <option value="DigitalRupee">डिजिटल ई-रुपया (Digital e-Rupee QR)</option>
+                </select>
+            </div>
+
+            <!-- 🏛️ केस 1: IMPS की बैंक डिटेल्स -->
+            <div id="impsBox" class="payment-details">
+                <h4 style="color: #38bdf8; margin-bottom: 10px;">IMPS बैंक अकाउंट डिटेल्स भरें</h4>
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label>बैंक खाता नंबर <span class="required">*</span></label>
+                    <input type="text" id="bankAccount" placeholder="Account Number डालें">
+                </div>
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label>IFSC कोड <span class="required">*</span></label>
+                    <input type="text" id="bankIfsc" placeholder="IFSC Code डालें">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>खाताधारक का नाम <span class="required">*</span></label>
+                    <input type="text" id="accountName" placeholder="Account Holder Name डालें">
+                </div>
+            </div>
+
+            <!-- 📱 केस 2: डिजिटल ई-रुपया QR कोड अपलोड -->
+            <div id="qrBox" class="payment-details">
+                <h4 style="color: #38bdf8; margin-bottom: 10px;">डिजिटल ई-रुपया डिटेल्स</h4>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>अपना डिजिटल ई-रुपया QR कोड अपलोड करें <span class="required">*</span></label>
+                    <input type="file" id="digitalRupeeQr" accept="image/*">
+                </div>
+            </div>
+
+            <!-- 🔒 एडमिन का USDT डिपॉजिट बॉक्स (भुगतान का कोई भी माध्यम चुनने पर खुलेगा) -->
+            <div id="adminCryptoBox" class="admin-crypto-box">
+                <h3 style="color: #eab308; text-align: center; margin-bottom: 15px; font-size: 15px;">⬇️ नीचे दिए गए एड्रेस पर USDT ट्रांसफर करें ⬇️</h3>
+                
+                <!-- TRC20 डिटेल्स -->
+                <div class="crypto-network">
+                    <div class="crypto-title">USDT (TRC20 Network)</div>
+                    <div class="qr-placeholder">[ TRC20 DEPOSIT QR ]</div>
+                    <label style="font-size: 12px; display: block; text-align: left; margin-top: 5px;">टोकन ट्रांजैक्शन कोड (Address):</label>
+                    <div class="wallet-address" id="trc20Address">TYuR1234xxxxxxxxxTRC20AddressXXXXXXXX</div>
+                </div>
+
+                <!-- BEP20 डिटेल्स -->
+                <div class="crypto-network">
+                    <div class="crypto-title">USDT (BEP20 Network)</div>
+                    <div class="qr-placeholder">[ BEP20 DEPOSIT QR ]</div>
+                    <label style="font-size: 12px; display: block; text-align: left; margin-top: 5px;">टोकन ट्रांजैक्शन कोड (Address):</label>
+                    <div class="wallet-address" id="bep20Address">0x71C765xxxxxxxxxxBEP20AddressXXXXXXXX</div>
+                </div>
+
+                <!-- 🧾 ट्रांसफर स्क्रीनशॉट (Order Complete करने के लिए अनिवार्य) -->
+                <div class="form-group" style="margin-top: 20px; margin-bottom: 0;">
+                    <label for="txScreenshot" style="color: #fff;">USDT सेंड करने का स्क्रीनशॉट यहाँ अपलोड करें <span class="required">*</span></label>
+                    <input type="file" id="txScreenshot" accept="image/*">
+                </div>
+            </div>
+
+            <button type="submit" class="btn">रिक्वेस्ट सबमिट करें (Order Complete)</button>
+        </form>
+    </div>
+
+    <script>
+        const currentUsdtRate = 92.50; 
+        document.getElementById('liveRate').innerText = currentUsdtRate.toFixed(2);
+
+        // USDT to INR लाइव कनवर्टर
+        function calculateINR() {
+            const usdtInput = document.getElementById('usdtAmount').value;
+            const inrSpan = document.getElementById('inrAmount');
+            if (usdtInput && usdtInput > 0) {
+                const totalINR = usdtInput * currentUsdtRate;
+                inrSpan.innerText = totalINR.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            } else {
+                inrSpan.innerText = "0.00";
+            }
+        }
+
+        // पेमेंट मोड बदलने पर वैलिडेशन और UI चेंज (दोनों केस में क्रिप्टो एड्रेस दिखेंगे)
+        function handlePaymentMethodChange() {
+            const method = document.getElementById('paymentMethod').value;
+            const impsBox = document.getElementById('impsBox');
+            const qrBox = document.getElementById('qrBox');
+            const adminCryptoBox = document.getElementById('adminCryptoBox');
+            
+            const qrInput = document.getElementById('digitalRupeeQr');
+            const bankAccount = document.getElementById('bankAccount');
+            const bankIfsc = document.getElementById('bankIfsc');
+            const accountName = document.getElementById('accountName');
+            const txScreenshot = document.getElementById('txScreenshot');
+
+            // डिफ़ॉल्ट रीसेट
+            impsBox.style.display = "none";
+            qrBox.style.display = "none";
+            adminCryptoBox.style.display = "none";
+            
+            qrInput.required = false;
+            bankAccount.required = false;
+            bankIfsc.required = false;
+            accountName.required = false;
+            txScreenshot.required = false;
+
+            if (method === "IMPS") {
+                impsBox.style.display = "block";
+                adminCryptoBox.style.display = "block"; // IMPS में भी डायरेक्ट क्रिप्टो डिटेल्स खुलेंगे
+                bankAccount.required = true;
+                bankIfsc.required = true;
+                accountName.required = true;
+                txScreenshot.required = true; 
+            } else if (method === "DigitalRupee") {
+                qrBox.style.display = "block";
+                adminCryptoBox.style.display = "block"; // डिजिटल रुपया में भी डायरेक्ट क्रिप्टो डिटेल्स खुलेंगे
+                qrInput.required = true; // डिजिटल रुपया के लिए QR कोड अपलोड जरूरी है
+                txScreenshot.required = true;
+            }
+        }
+
+        // फाइनल ऑर्डर सबमिशन चेक
+        function handleSubmit(event) {
+            event.preventDefault();
+            const txScreenshot = document.getElementById('txScreenshot');
+
+            if (!txScreenshot.files || txScreenshot.files.length === 0) {
+                alert("❌ गड़बड़: ऑर्डर पूरा करने के लिए USDT ट्रांसफर का स्क्रीनशॉट अपलोड करना अनिवार्य है!");
+                return;
+            }
+
+            alert("✅ सफलता: आपकी रिक्वेस्ट सबमिट हो गई है! bluedotpay एडमिन वेरिफिकेशन के बाद आपका पेमेंट प्रोसेस कर दिया जाएगा।");
+        }
+    </script>
+</body>
+</html>

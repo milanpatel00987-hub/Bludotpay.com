@@ -1,0 +1,11 @@
+; Zone file for bludotpay.shop
+; Generated on 2026-09-16 17:03:56 UTC
+
+$ORIGIN bludotpay.shop
+$TTL 3600
+
+@                              3600 IN SOA   nova.dns-parking.com. dns.hostinger.com. 2026091602 10000 2400 604800 600
+@                              50 IN A     2.57.91.91
+@                              86400 IN NS    cosmos.dns-parking.com.
+                               86400 IN NS    nova.dns-parking.com.
+www                            300 IN CNAME bludotpay.shop.

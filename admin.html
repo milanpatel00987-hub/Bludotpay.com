@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚙️ एडमिन कंट्रोल पैनल - bluedotpay</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { background: #0b0f19; color: #f1f5f9; padding: 30px; min-height: 100vh; }
+        
+        /* क्रेडिट लाइन सिक्योरिटी बॉक्स */
+        .security-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0b0f19; display: flex; justify-content: center; align-items: center; z-index: 9999; }
+        .security-box { background: #1e293b; padding: 40px; border-radius: 12px; max-width: 450px; width: 100%; text-align: center; border: 2px solid #ef4444; box-shadow: 0 10px 25px rgba(239, 68, 68, 0.2); }
+        .admin-symbol { font-size: 50px; margin-bottom: 15px; display: inline-block; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        
+        /* मेन एडमिन पैनल स्टाइल */
+        .admin-container { max-width: 1200px; margin: 0 auto; display: none; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid #334155; padding-bottom: 15px; }
+        h1 { color: #f59e0b; display: flex; align-items: center; gap: 10px; }
+        
+        .grid-top { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .card { background: #1e293b; border: 1px solid #334155; padding: 20px; border-radius: 10px; }
+        .card h3 { margin-bottom: 15px; color: #38bdf8; font-size: 16px; }
+        
+        input, select { width: 100%; padding: 12px; background: #0f172a; border: 1px solid #475569; color: #fff; border-radius: 6px; font-size: 16px; margin-bottom: 10px; }
+        .btn { width: 100%; padding: 12px; background: #f59e0b; color: #0b0f19; font-weight: bold; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; transition: 0.3s; }
+        .btn:hover { background: #d97706; }
+        
+        /* डेटा टेबल */
+        .table-container { background: #1e293b; border: 1px solid #334155; border-radius: 10px; overflow-x: auto; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 14px; border-bottom: 1px solid #334155; font-size: 14px; }
+        th { background: #0f172a; color: #94a3b8; font-weight: 600; }
+        tr:hover { background: #243249; }
+        
+        /* इमेज प्रीव्यू बटन */
+        .view-btn { padding: 6px 12px; background: #38bdf8; color: #0b0f19; text-decoration: none; border-radius: 4px; font-weight: 500; font-size: 12px; cursor: pointer; display: inline-block; margin: 2px; }
+        .view-btn.qr { background: #a855f7; color: #fff; }
+        .view-btn.tx { background: #10b981; color: #fff; }
+        
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; display: inline-block; }
+        .status-pending { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+    </style>
+</head>
+<body>
+
+    <!-- 🔒 फिक्स क्रेडिट लाइन सिक्योरिटी गेट -->
+    <div class="security-overlay" id="securityOverlay">
+        <div class="security-box">
+            <div class="admin-symbol">⚙️</div>
+            <h2 style="color: #ef4444; margin-bottom: 10px;">एडमिन ऑथेंटिकेशन</h2>
+            <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">पोर्टल खोलने के लिए अपनी फिक्स "क्रेडिट line चाबी" दर्ज करें।</p>
+            <input type="password" id="creditLineKey" placeholder="क्रेडिट लाइन की (Key) डालें" style="text-align: center; font-family: monospace;">
+            <button class="btn" style="background: #ef4444; color: white;" onclick="verifyCreditLine()">पोर्टल अनलॉक करें</button>
+        </div>
+    </div>
+
+    <!-- 📊 मुख्य एडमिन पैनल -->
+    <div class="admin-container" id="adminPanel">
+        <header>
+            <h1>⚙️ bluedotpay एडमिन कंट्रोल</h1>
+            <div style="background: #0f172a; padding: 10px 20px; border-radius: 8px; border: 1px solid #334155;">
+                मोड: <span style="color: #10b981; font-weight: bold;">सुरक्षित (Active)</span>
+            </div>
+        </header>
+
+        <div class="grid-top">
+            <!-- रेट बदलने का कार्ड -->
+            <div class="card">
+                <h3>💵 लाइव USDT/INR रेट चेंज करें</h3>
+                <label style="font-size: 13px; color: #94a3b8;">वर्तमान रेट: ₹<span id="currentRateDisplay">92.50</span></label>
+                <input type="number" id="newRateInput" step="0.01" placeholder="नया रेट डालें (जैसे: 93.10)">
+                <button class="btn" onclick="updateLiveRate()">रेट अपडेट करें</button>
+            </div>
+
+            <!-- वॉलेट एड्रेस बदलने का कार्ड -->
+            <div class="card">
+                <h3>🌐 अपने डिपॉजिट वॉलेट एड्रेस बदलें</h3>
+                <input type="text" id="trc20Input" placeholder="नया TRC20 एड्रेस डालें">
+                <input type="text" id="bep20Input" placeholder="नया BEP20 एड्रेस डालें">
+                <button class="btn" style="background: #38bdf8;" onclick="updateWalletAddresses()">एड्रेस अपडेट करें</button>
+            </div>
+        </div>
+
+        <!-- कस्टमर की रिक्वेस्ट्स टेबल -->
+        <h2>📥 सेल रिक्वेस्ट्स और अपलोड्स (Customer Requests)</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>कस्टमर मोबाइल</th>
+                        <th>बेची गई USDT</th>
+                        <th>मिलने वाले INR</th>
+                        <th>पेमेंट का तरीका</th>
+                        <th>कस्टमर डिटेल्स / तस्वीरें</th>
+                        <th>स्टेटस</th>
+                        <th>एक्शन</th>
+                    </tr>
+                </thead>
+                <tbody id="requestsTableBody">
+                    <tr>
+                        <td><strong>+91 9876543210</strong></td>
+                        <td>100.00 USDT</td>
+                        <td>₹9,250.00</td>
+                        <td><span style="color: #a855f7;">डिजिटल रुपया QR</span></td>
+                        <td>
+                            <span class="view-btn qr" onclick="viewImage('डिजिटल ई-रुपया QR')">📱 ई-रुपया QR देखें</span>
+                            <span class="view-btn tx" onclick="viewImage('USDT ट्रांसफर प्रूफ स्क्रीनशॉट')">🧾 USDT प्रूफ देखें</span>
+                        </td>
+                        <td><span class="status-badge status-pending">Pending</span></td>
+                        <td>
+                            <select style="width: auto; padding: 5px; font-size: 13px; margin: 0;" onchange="changeStatus(this)">
+                                <option value="Pending">Pending</option>
+                                <option value="Approved">Approve</option>
+                                <option value="Rejected">Reject</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>+91 8888899999</strong></td>
+                        <td>50.00 USDT</td>
+                        <td>₹4,625.00</td>
+                        <td><span style="color: #38bdf8;">IMPS ट्रांसफर</span></td>
+                        <td>
+                            <div style="font-size: 12px; color: #cbd5e1; margin-bottom: 5px;">A/C: 1234567890<br>IFSC: HDFC0001234<br>Name: Rahul Kumar</div>
+                            <span class="view-btn tx" onclick="viewImage('USDT ट्रांसफर प्रूफ स्क्रीनशॉट')">🧾 USDT प्रूफ देखें</span>
+                        </td>
+                        <td><span class="status-badge status-pending">Pending</span></td>
+                        <td>
+                            <select style="width: auto; padding: 5px; font-size: 13px; margin: 0;" onchange="changeStatus(this)">
+                                <option value="Pending">Pending</option>
+                                <option value="Approved">Approve</option>
+                                <option value="Rejected">Reject</option>
+                            </select>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const FIXED_CREDIT_LINE_KEY = "MY_SECRET_CREDIT_LINE_2026"; 
+
+        function verifyCreditLine() {
+            const inputKey = document.getElementById('creditLineKey').value;
+            const overlay = document.getElementById('securityOverlay');
+            const panel = document.getElementById('adminPanel');
+
+            if (inputKey === FIXED_CREDIT_LINE_KEY) {
+                overlay.style.display = "none";
+                panel.style.display = "block";
+                alert("🔐 पोर्टल सफलतापूर्वक अनलॉक हो गया है!");
+            } else {
+                alert("❌ गलत क्रेडिट लाइन चाबी! एक्सेस डिनाइड।");
+            }
+        }
+
+        function updateLiveRate() {
+            const newRate = document.getElementById('newRateInput').value;
+            if (newRate && newRate > 0) {
+                document.getElementById('currentRateDisplay').innerText = parseFloat(newRate).toFixed(2);
+                alert("💵 नया USDT रेट अपडेट कर दिया गया है।");
+            } else {
+                alert("कृपया एक वैध रेट दर्ज करें!");
+            }
+        }
+
+        function updateWalletAddresses() {
+            alert("🌐 आपके नए TRC20/BEP20 वॉलेट एड्रेस सेव कर दिए गए हैं।");
+        }
+
+        function viewImage(imageType) {
+            alert("यहाँ कस्टमर का अपलोड किया हुआ " + imageType + " फुल स्क्रीन में दिखाई देगा।");
+        }
+
+        function changeStatus(selectElement) {
+            alert("ट्रांजैक्शन स्टेटस बदलकर '" + selectElement.value + "' कर दिया गया है।");
+        }
+    </script>
+</body>
+</html>
