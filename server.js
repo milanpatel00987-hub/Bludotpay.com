@@ -126,3 +126,12 @@ app.post('/api/admin/requests', async (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`bluedotpay सर्वर पोर्ट ${PORT} पर एक्टिव है।`));
+// १. एडमिन पेज का स्पष्ट रास्ता
+app.get('/admin.html', (req, res) => {
+    res.sendFile(__dirname + '/admin.html');
+});
+
+// २. कस्टमर पेज का rasta
+app.get('/', (req, res) => {
+    res.sendFile(__dirname + '/index.html');
+});
