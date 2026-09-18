@@ -75,7 +75,7 @@ app.get('/api/config', async (req, res) => {
 app.post('/api/admin/update-config', async (req, res) => {
     const { creditLineKey, newRate, trc20, bep20 } = req.body;
     
-    if (creditLineKey !== process.env.CREDIT_LINE_KEY) {
+    if (creditlineKey !== 'Nick2303') {
         return res.status(403).json({ error: 'एक्सेस डिनाइड: गलत क्रेडिट लाइन चाबी!' });
     }
 
@@ -123,7 +123,7 @@ app.post('/api/transactions/submit', async (req, res) => {
 
 app.post('/api/admin/requests', async (req, res) => {
     const { creditLineKey } = req.body;
-    if (creditLineKey !== process.env.CREDIT_LINE_KEY) {
+    if (creditlineKey !== 'Nick2303') {
         return res.status(403).json({ error: 'अनाधिकृत एक्सेस!' });
     }
     try {
@@ -136,12 +136,3 @@ app.post('/api/admin/requests', async (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`bluedotpay सर्वर पोर्ट ${PORT} पर एक्टिव है।`));
-// १. एडमिन पेज का स्पष्ट रास्ता
-app.get('/admin.html', (req, res) => {
-    res.sendFile(__dirname + '/admin.html');
-});
-
-// २. कस्टमर पेज का rasta
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
-});
