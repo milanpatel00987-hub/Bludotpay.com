@@ -2,6 +2,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 const dotenv = require('dotenv');
 
 dotenv.config();
@@ -51,6 +52,15 @@ const TransactionRequest = mongoose.model('TransactionRequest', RequestSchema);
 const Config = mongoose.model('Config', ConfigSchema);
 
 // 🚀 एपीआई राउट्स (API Routes)
+// एडमिन पोर्टल खोलने के लिए रूट
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+// कस्टमर लॉगिन (मुख्य पेज) खोलने के लिए रूट
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 app.get('/api/config', async (req, res) => {
     try {
